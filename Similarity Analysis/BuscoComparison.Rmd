@@ -1,0 +1,376 @@
+---
+title: "BUSCOComparison"
+author: "Kourosh"
+date: "October 12, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Pairwise comparisons
+
+```{r}
+
+
+Doyle = unique(read.delim(file = "DoyleGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
+Lang = unique(read.delim(file = "LangGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
+Schwarz = unique(read.delim(file = "SchwarzGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
+colnames(Doyle) <- c("BuscoId","Status")
+colnames(Lang) <- c("BuscoId","Status")
+colnames(Schwarz) <- c("BuscoId","Status")
+Doyle$Status[Doyle$Status=="Complete"] = "Singleton"
+Lang$Status[Lang$Status=="Complete"] = "Singleton"
+Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
+
+
+
+
+#------------------------------------------------------------------------
+DoyleLang <- data.frame(matrix(ncol = 4, nrow = 4))
+colnames(DoyleLang) <- c("Singleton","Duplicated","Fragmented","Missing")  #Column is for Doyle
+rownames(DoyleLang) <- c("Singleton","Duplicated","Fragmented","Missing")  #Row is for Lang
+
+
+#Doyle Vs Lang
+
+for (L in c("Singleton","Duplicated","Fragmented","Missing")){
+  for (D in c("Singleton","Duplicated","Fragmented","Missing")){
+    DoyleLang[L,D] <- length(intersect(Doyle$BuscoId[Doyle$Status == D],Lang$BuscoId[Lang$Status == L]))
+  }
+}
+
+#-----------------------------------------------------------------------
+
+
+
+LangSchwarz <- data.frame(matrix(ncol = 4, nrow = 4))
+colnames(LangSchwarz) <- c("Singleton","Duplicated","Fragmented","Missing")  #Column is for Doyle
+rownames(LangSchwarz) <- c("Singleton","Duplicated","Fragmented","Missing")  #Row is for Schwarz
+
+
+#Lang Vs Schwarz
+
+for (S in c("Singleton","Duplicated","Fragmented","Missing")){
+  for (L in c("Singleton","Duplicated","Fragmented","Missing")){
+    LangSchwarz[S,L] <- length(intersect(Lang$BuscoId[Lang$Status == L],Schwarz$BuscoId[Schwarz$Status == S]))
+  }
+}
+
+
+#----------------------------------------------------------------
+
+
+DoyleSchwarz <- data.frame(matrix(ncol = 4, nrow = 4))
+colnames(DoyleSchwarz) <- c("Singleton","Duplicated","Fragmented","Missing")  #Column is for Doyle
+rownames(DoyleSchwarz) <- c("Singleton","Duplicated","Fragmented","Missing")  #Row is for Schwarz
+
+#Doyle Vs Schwarz
+
+for (S in c("Singleton","Duplicated","Fragmented","Missing")){
+  for (D in c("Singleton","Duplicated","Fragmented","Missing")){
+    DoyleSchwarz[S,D] <- length(intersect(Doyle$BuscoId[Doyle$Status == D],Schwarz$BuscoId[Schwarz$Status == S]))
+  }
+}
+
+
+#-----------------------------------------------------------------
+
+
+LangSchwarzWithDoyleComplete <- data.frame(matrix(ncol = 4, nrow = 4))
+colnames(LangSchwarzWithDoyleComplete) <- c("Singleton","Duplicated","Fragmented","Missing")  #Column is for Doyle
+rownames(LangSchwarzWithDoyleComplete) <- c("Singleton","Duplicated","Fragmented","Missing")  #Row is for Schwarz
+
+
+#Lang Vs Schwarz with only complete set of Doyle 
+
+for (S in c("Singleton","Duplicated","Fragmented","Missing")){
+  for (L in c("Singleton","Duplicated","Fragmented","Missing")){
+    LangSchwarzWithDoyleComplete[S,L] <- length(intersect(Lang$BuscoId[Lang$Status == L],intersect(Schwarz$BuscoId[Schwarz$Status == S],Doyle$BuscoId[Doyle$Status == "Singleton"])))
+  }
+}
+
+rm(S,D,L)
+
+```
+
+#Lang Sparkle Analysis
+
+Lang was taken through diamond which aligned its reads against the Busco gene set. Below here we are doing the analysis.  
+
+
+```{r }
+
+library(data.table)
+library(plyr)
+library(dplyr)
+library(seqinr)
+library(GenomicRanges)
+library(ggplot2)
+
+files = c(paste0("LangDiamondResults/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
+
+readDiamond <- function(diamondFile,proteinFile,bestAllignment = TRUE){
+  diamond <- fread(diamondFile,header = FALSE,stringsAsFactors = FALSE,data.table = FALSE)
+  colnames(diamond) =c("Query","Reference","%id","length","mistmatches","gaps","q.start","q.end","s.start","s.end","Diamondevalue","DiamondScore")
+
+  if(bestAllignment){
+    diamond <-   data.frame(diamond %>%
+                              group_by(Query) %>%
+                              filter(DiamondScore == max(DiamondScore)))
+  }
+  
+  diamondGRanges <- makeGRangesFromDataFrame(diamond,seqnames.field= "Reference",start.field = "s.start",end.field ="s.end")
+  mcols(diamondGRanges)$Score <- diamond$DiamondScore
+  mcols(diamondGRanges)$Query <- diamond$Query
+  
+  #Correcting sequence lengths 
+  if(!is.null(proteinFile)){
+    protein <<-  read.fasta(proteinFile)
+    seqlengths(diamondGRanges) <-  getLength(protein[       seqnames(seqinfo(diamondGRanges))        ])
+  }
+  return(diamondGRanges)
+}
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+calculateTotalCoverage <- function(coverage){
+  totalCoverage <- coverage[,3]
+  totalCoverage <- totalCoverage[(totalCoverage >31 & totalCoverage< 500)]   #Limited the data so it is easier to see the main parts of it. We can also limit the data later on as well. 
+  totalCoverage <- as.data.frame(totalCoverage)
+  return(totalCoverage)
+}
+
+proteinFile = "BuscoProteinSet.fa"
+
+
+langGRanges = GRanges()
+for (i in files){
+  grange = readDiamond(i,proteinFile,bestAllignment = TRUE)
+  langGRanges = c(langGRanges,grange)
+ 
+}
+rm(i,grange)
+langGRanges <- langGRanges[seqnames(langGRanges) %in% Doyle$BuscoId[Doyle$Status == "Singleton"]]
+
+
+coverage <- as.data.frame(coverage(langGRanges))
+totalCoverage <- calculateTotalCoverage(coverage)
+mode = getmode(totalCoverage[,1])
+ggplot(totalCoverage)+geom_histogram(binwidth = 1,aes(x=totalCoverage,fill= totalCoverage == mode),show.legend = FALSE) + scale_fill_manual(values = c("FALSE"="black","TRUE"="blue"))+ylab("Number of amino acids")+xlab("Depth of Coverage")
+
+
+
+
+#Violin Plot
+
+pertcentAAGreaterThanThreshold <-   coverage[,c(2,3)] %>%
+  group_by(group_name) %>%
+  filter(value >= mode)%>%
+  tally()
+
+pertcentAAGreaterThanThreshold$Length <- as.vector(seqlengths(langGRanges)[pertcentAAGreaterThanThreshold$group_name])
+pertcentAAGreaterThanThreshold <- data.frame(mutate(pertcentAAGreaterThanThreshold,Percentcov=n/Length*100))
+pertcentAAGreaterThanThreshold <- left_join(Lang,pertcentAAGreaterThanThreshold,by=c("BuscoId"= "group_name"))
+pertcentAAGreaterThanThreshold <- pertcentAAGreaterThanThreshold[pertcentAAGreaterThanThreshold$BuscoId %in% Doyle$BuscoId[Doyle$Status == "Singleton"],]
+pertcentAAGreaterThanThreshold$Percentcov[is.na(pertcentAAGreaterThanThreshold$Percentcov)] = 0
+
+
+
+
+
+SingletonCount = table(pertcentAAGreaterThanThreshold$Status=="Singleton")[2]
+DuplicatedCount = table(pertcentAAGreaterThanThreshold$Status=="Duplicated")[2]
+FragmentedCount = table(pertcentAAGreaterThanThreshold$Status=="Fragmented")[2]
+MissingCount = table(pertcentAAGreaterThanThreshold$Status=="Missing")[2]
+```
+
+
+
+```{r}
+set.seed(1)
+
+##Scaled Ouput
+plot <- ggplot(pertcentAAGreaterThanThreshold,aes(x=1,y=Percentcov))+ geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Singleton"),alpha=0,col="green",aes(x=1,y=Percentcov,width= 1))
+
+plot <- plot + geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Duplicated"),alpha=0,col="blue",aes(x=1,y=Percentcov,width= DuplicatedCount/SingletonCount))
+
+plot <- plot + geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Fragmented"),alpha=0,col="orange",aes(x=1,y=Percentcov,width= FragmentedCount/SingletonCount))
+
+plot <- plot + geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Missing"),alpha=0,col="red",aes(x=1,y=Percentcov,width= MissingCount/SingletonCount))
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(data =pertcentAAGreaterThanThreshold,shape=16,size=0.4,aes(color=Status))+ scale_colour_manual(values = c("Singleton"="green","Fragmented"="blue","Duplicated"="orange","Missing"="Red"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  xlab("")
+plot
+ggsave("Lang.png",plot,height = 10,width =20)
+
+
+
+#Not Scaled output
+plot <- ggplot(pertcentAAGreaterThanThreshold,aes(x=1,y=Percentcov))+ geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Singleton"),alpha=0,col="green",aes(x=1,y=Percentcov))
+
+plot <- plot + geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Duplicated"),alpha=0,col="blue",aes(x=1,y=Percentcov))
+
+plot <- plot + geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Fragmented"),alpha=0,col="orange",aes(x=1,y=Percentcov))
+
+plot <- plot + geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Missing"),alpha=0,col="red",aes(x=1,y=Percentcov))
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(data =pertcentAAGreaterThanThreshold,shape=16,size=0.4,aes(color=Status))+ scale_colour_manual(values = c("Singleton"="green","Fragmented"="blue","Duplicated"="orange","Missing"="Red"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  xlab("")
+plot
+ggsave("LangNotScaled.png",plot,height = 10,width =20)
+
+
+```
+
+```{r }
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Singleton"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1, color = "black")
+#+scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("")+ ggtitle("Singleton")
+plot
+ggsave("LangSingleton.png",plot,height = 10,width =20)
+ggsave("LangSingleton.eps",plot,height = 10,width =20)
+
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Duplicated"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1,color="black")
+#+ scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("")+ ggtitle("Duplicated")
+plot
+ggsave("LangDuplicated.png",plot,height = 10,width =20)
+ggsave("LangDuplicated.eps",plot,height = 10,width =20)
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Fragmented"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1,color="black")
+#+ scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("")+ ggtitle("Fragmented")
+plot
+ggsave("LangFragmented.png",plot,height = 10,width =20)
+ggsave("LangFragmented.eps",plot,height = 10,width =20)
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Missing"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1,color="black")
+#+ scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("") + ggtitle("Missing")
+plot
+ggsave("LangMissing.png",plot,height = 10,width =20)
+ggsave("LangMissing.eps",plot,height = 10,width =20)
+
+
+```
+
+
+
+
+```{r }
+library(data.table)
+library(plyr)
+library(dplyr)
+library(seqinr)
+library(GenomicRanges)
+library(ggplot2)
+
+files = c(paste0("SchwarzDiamondResults/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
+
+proteinFile = "BuscoProteinSet.fa"
+
+
+SchwarzGRanges = GRanges()
+for (i in files){
+  grange = readDiamond(i,proteinFile,bestAllignment = TRUE)
+  SchwarzGRanges = c(SchwarzGRanges,grange)
+ 
+}
+rm(i,grange)
+langGRanges <- langGRanges[seqnames(langGRanges) %in% Doyle$BuscoId[Doyle$Status == "Singleton"]]
+
+coverage <- as.data.frame(coverage(SchwarzGRanges))
+totalCoverage <- calculateTotalCoverage(coverage)
+mode = getmode(totalCoverage[,1])
+ggplot(totalCoverage)+geom_histogram(binwidth = 1,aes(x=totalCoverage,fill= totalCoverage == mode),show.legend = FALSE) + scale_fill_manual(values = c("FALSE"="black","TRUE"="blue"))+ylab("Number of amino acids")+xlab("Depth of Coverage")
+
+mode
+
+#Violin Plot
+pertcentAAGreaterThanThreshold <-   coverage[,c(2,3)] %>%
+  group_by(group_name) %>%
+  filter(value >= mode)%>%
+  tally()
+
+pertcentAAGreaterThanThreshold$Length <- as.vector(seqlengths(SchwarzGRanges)[pertcentAAGreaterThanThreshold$group_name])
+pertcentAAGreaterThanThreshold <- data.frame(mutate(pertcentAAGreaterThanThreshold,Percentcov=n/Length*100))
+pertcentAAGreaterThanThreshold <- left_join(Schwarz,pertcentAAGreaterThanThreshold,by=c("BuscoId"= "group_name"))
+pertcentAAGreaterThanThreshold <- pertcentAAGreaterThanThreshold[pertcentAAGreaterThanThreshold$BuscoId %in% Doyle$BuscoId[Doyle$Status == "Singleton"],]
+pertcentAAGreaterThanThreshold$Percentcov[is.na(pertcentAAGreaterThanThreshold$Percentcov)] = 0
+
+
+
+set.seed(1)
+
+SingletonCount = table(pertcentAAGreaterThanThreshold$Status=="Singleton")[2]
+DuplicatedCount = table(pertcentAAGreaterThanThreshold$Status=="Duplicated")[2]
+FragmentedCount = table(pertcentAAGreaterThanThreshold$Status=="Fragmented")[2]
+MissingCount = table(pertcentAAGreaterThanThreshold$Status=="Missing")[2]
+
+
+```
+
+
+
+```{r }
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Singleton"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1, color = "black")
+#+scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("")+ ggtitle("Singleton")
+plot
+ggsave("SchwarzSingleton.png",plot,height = 10,width =20)
+ggsave("SchwarzSingleton.eps",plot,height = 10,width =20)
+
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Duplicated"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1,color="black")
+#+ scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("")+ ggtitle("Duplicated")
+plot
+ggsave("SchwarzDuplicated.png",plot,height = 10,width =20)
+ggsave("SchwarzDuplicated.eps",plot,height = 10,width =20)
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Fragmented"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1,color="black")
+#+ scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("")+ ggtitle("Fragmented")
+plot
+ggsave("SchwarzFragmented.png",plot,height = 10,width =20)
+ggsave("SchwarzFragmented.eps",plot,height = 10,width =20)
+
+set.seed(1)
+plot <- ggplot(subset(pertcentAAGreaterThanThreshold,Status == "Missing"),aes(x=1,y=Percentcov))+ geom_violin(alpha=0)
+plot <- plot +coord_flip()
+plot <- plot +geom_jitter(shape=16,size=1,color="black")
+#+ scale_colour_manual(values = c("FALSE"="black","TRUE"="green"))
+plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  theme(legend.position = 'none')+ xlab("") + ggtitle("Missing")
+plot
+ggsave("SchwarzMissing.png",plot,height = 10,width =20)
+ggsave("SchwarzMissing.eps",plot,height = 10,width =20)
+```
+
+
