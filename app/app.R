@@ -13,26 +13,49 @@ library(shinyBS)
 library(shinyjs)
 
 
-readDiamond <- function(diamondFile,proteinFile,bestAllignment = TRUE){
-  diamond <- fread(diamondFile,header = FALSE,stringsAsFactors = FALSE,data.table = FALSE)
-  colnames(diamond) =c("Query","Reference","%id","length","mistmatches","gaps","q.start","q.end","s.start","s.end","Diamondevalue","DiamondScore")
 
-  if(bestAllignment){
-    diamond <-   data.frame(diamond %>%
-                              group_by(Query) %>%
-                              filter(DiamondScore == max(DiamondScore)))
-  }
+LangDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
+SchwarzDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
+proteinFile <-  "../Similarity Analysis/BuscoProteinSet.fa"
+Doyle <-  unique(read.delim(file = "../Similarity Analysis/DoyleGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
+Lang <- unique(read.delim(file = "../Similarity Analysis/LangGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
+Schwarz <- unique(read.delim(file = "../Similarity Analysis/SchwarzGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
+colnames(Doyle) <- c("BuscoId","Status")
+colnames(Lang) <- c("BuscoId","Status")
+colnames(Schwarz) <- c("BuscoId","Status")
+Doyle$Status[Doyle$Status=="Complete"] = "Singleton"
+Lang$Status[Lang$Status=="Complete"] = "Singleton"
+Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
+
+
+diamondFiles <- LangDiamondFiles
+myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Missing"])
+#myProteins <- Lang$BuscoId[Doyle$Status == "Missing"]
+
+readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
   
-  diamondGRanges <- makeGRangesFromDataFrame(diamond,seqnames.field= "Reference",start.field = "s.start",end.field ="s.end")
-  mcols(diamondGRanges)$Score <- diamond$DiamondScore
-  mcols(diamondGRanges)$Query <- diamond$Query
+  allDiamondGranges = GRanges()
+  for (diamondFile in diamondFiles){
+    diamond <- fread(diamondFile,header = FALSE,stringsAsFactors = FALSE,data.table = FALSE)
+    colnames(diamond) <- c("Query","Reference","%id","length","mistmatches","gaps","q.start","q.end","s.start","s.end","Diamondevalue","DiamondScore")
+    
+    if(bestAllignment){
+      diamond <-   data.frame(diamond %>%
+                                group_by(Query) %>%
+                                filter(DiamondScore == max(DiamondScore)))
+    }
+    diamondGRanges <- makeGRangesFromDataFrame(diamond,seqnames.field= "Reference",start.field = "s.start",end.field ="s.end")
+    mcols(diamondGRanges)$Score <- diamond$DiamondScore
+    mcols(diamondGRanges)$Query <- diamond$Query
+    allDiamondGranges <-  c(allDiamondGranges,diamondGRanges)
+  }
   
   #Correcting sequence lengths 
   if(!is.null(proteinFile)){
     protein <<-  read.fasta(proteinFile)
-    seqlengths(diamondGRanges) <-  getLength(protein[       seqnames(seqinfo(diamondGRanges))        ])
+    seqlengths(allDiamondGranges) <-  getLength(protein[       seqnames(seqinfo(allDiamondGranges))        ])
   }
-  return(diamondGRanges)
+  return(allDiamondGranges)
 }
 
 getmode <- function(v) {
@@ -42,7 +65,7 @@ getmode <- function(v) {
 
 calculateTotalCoverage <- function(coverage){
   totalCoverage <- coverage[,3]
-  totalCoverage <- totalCoverage[(totalCoverage > 0 & totalCoverage<50)]   #Limited the data so it is easier to see the main parts of it. We can also limit the data later on as well. 
+  totalCoverage <- totalCoverage[(totalCoverage > 10 & totalCoverage<=200)]   #Limited the data so it is easier to see the main parts of it. We can also limit the data later on as well. 
   totalCoverage <- as.data.frame(totalCoverage)
   return(totalCoverage)
 }
@@ -63,8 +86,8 @@ ui <- fluidPage(
       sidebarPanel(
          sliderInput("Coverage",
                      "Coverage Threshold",
-                     min = 0,
-                     max = 50,
+                     min = 10,
+                     max = 200,
                      step = 1,
                      value = 0),
          p("Note: A threshold value of '0' does not produce any graphs"),
@@ -84,7 +107,8 @@ ui <- fluidPage(
        
        selectInput("Proteins", "Chosen Proteins", c(), multiple=TRUE, selectize=TRUE),
        sliderInput("AAThreshold","Percent amino acid above threshold",min=0,max=100,value = c(80,100)),
-       actionButton("ProtienComplete","Start Analysis")
+       actionButton("ProtienComplete","Start Analysis"),
+       actionButton("myProtein","Select My Proteins")
      ),
      
      # Show a plot of the generated distribution
@@ -131,8 +155,10 @@ server <- function(input, output,session) {
   
   
   #Data 
-  #diamondGRanges <- readDiamond(diamondFile = "../SparkleRunThrough/Allignment/trimmed.PRJEB506.ERR119620.R1.Allignment.txt",proteinFile = "../SparkleRunThrough/Allignment/DataBase/c_elegans.PRJNA13758.protein.clustered.fa")
- load("diamondGranges.Rdata")
+  
+  #diamondGRanges <- readDiamondFiles(diamondFiles = diamondFiles,proteinFile = proteinFile)
+  #save(diamondGRanges,file = "LangDiamondGranges.Rdata")
+  load("LangDiamondGranges.Rdata")
   splitDiamondGRanges <- split(diamondGRanges,seqnames(diamondGRanges))
   
   coverage <- as.data.frame(coverage(diamondGRanges))
@@ -375,8 +401,11 @@ server <- function(input, output,session) {
   #   updateSelectInput(session,"Proteins",selected = c(""))
   # })
   
+  observeEvent(input$myProtein,{
+    updateSelectInput(session,"Proteins",selected = myProteins )
+  })
+
   
- 
 }
 
 # Run the application 

@@ -187,7 +187,8 @@ FragmentedCount = table(pertcentAAGreaterThanThreshold$Status=="Fragmented")[2]
 MissingCount = table(pertcentAAGreaterThanThreshold$Status=="Missing")[2]
 ```
 
-
+##Scaled Output
+This means that the violin plots are scaled to their size.
 
 ```{r}
 set.seed(1)
@@ -206,7 +207,11 @@ plot <- plot +ylab(paste0("% amino acid that have coverage above ",mode))  +  xl
 plot
 ggsave("Lang.png",plot,height = 10,width =20)
 
+```
 
+##Not Scaled Output
+This means that the violin plots are not scaled to their size.
+```{r}
 
 #Not Scaled output
 plot <- ggplot(pertcentAAGreaterThanThreshold,aes(x=1,y=Percentcov))+ geom_violin(data= subset(pertcentAAGreaterThanThreshold,Status == "Singleton"),alpha=0,col="green",aes(x=1,y=Percentcov))
