@@ -1,0 +1,34 @@
+---
+title: "BuscoToCelegans"
+author: "Kourosh"
+date: "November 8, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Busco to C.elegans genes
+
+What we found out was that busco uses a hmmer consensus sequence which makes it very hard for reads to align. Thus we must get the closest ancestor being C. elegans to make this work. So I am going to be taking the othrodb groups and extracting the c.elegans genes from it. Hopefully it has all 982 genes. C.elegans species number is 6239. 
+
+```{r}
+library(seqinr)
+
+orthoDbToOrganism <- read.table("ogs.id.info",stringsAsFactors = FALSE)
+celegans <- orthoDbToOrganism[grep("6239:*",orthoDbToOrganism$V1),]
+
+length(unique(celegans$V2))
+#As the length mathces the number of protiens it is safe to assume that the protiens are all there. So now to extra the genes.
+
+OrganismToSequence <-  read.fasta("6239.fs",seqtype = "AA")
+
+sequence <- OrganismToSequence[celegans$V1]
+names(sequence) <- celegans$V2
+
+
+write.fasta(sequence,names(sequence),file.out = "BuscoCelegans.fasta")
+
+
+```
