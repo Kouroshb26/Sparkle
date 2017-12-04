@@ -16,7 +16,9 @@ library(shinyjs)
 
 LangDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
 SchwarzDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
-proteinFile <-  "../Similarity Analysis/BuscoProteinSet.fa"
+proteinFile <-  "../Similarity Analysis/BuscoCelegans.fasta"
+
+
 Doyle <-  unique(read.delim(file = "../Similarity Analysis/DoyleGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
 Lang <- unique(read.delim(file = "../Similarity Analysis/LangGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
 Schwarz <- unique(read.delim(file = "../Similarity Analysis/SchwarzGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
@@ -29,8 +31,8 @@ Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
 
 
 diamondFiles <- LangDiamondFiles
-myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Missing"])
-#myProteins <- Lang$BuscoId[Doyle$Status == "Missing"]
+myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Singleton"])
+#myProteins <- Lang$BuscoId[Lang$Status == "Singleton"]
 
 readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
   
