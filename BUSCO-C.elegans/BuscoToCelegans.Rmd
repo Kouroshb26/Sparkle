@@ -32,3 +32,86 @@ write.fasta(sequence,names(sequence),file.out = "BuscoCelegans.fasta")
 
 
 ```
+
+
+## Analyzing the shift
+
+
+```{r}
+library(GenomicRanges)
+library(data.table)
+library(plyr)
+library(dplyr)
+calculateTotalCoverage <- function(coverage){
+  totalCoverage <- coverage[,3]
+  totalCoverage <- totalCoverage[(totalCoverage > 10 & totalCoverage<=200)]   #Limited the data so it is easier to see the main parts of it. We can also limit the data later on as well. 
+  totalCoverage <- as.data.frame(totalCoverage)
+  return(totalCoverage)
+}
+
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+library(ggplot2)
+
+
+PercentAAGreaterThan <- function(diamondGRanges,proteinFile){
+  coverage <- as.data.frame(coverage(diamondGRanges))
+  totalCoverage <- calculateTotalCoverage(coverage)
+  threholdCoverage <- getmode(totalCoverage[,1])
+  
+  pertcentAAGreaterThanThreshold <-   coverage[,c(2,3)] %>%
+      group_by(group_name) %>%
+      filter(value >= threholdCoverage)%>%
+      tally()
+    pertcentAAGreaterThanThreshold$Length <- as.vector(seqlengths(diamondGRanges)[pertcentAAGreaterThanThreshold$group_name])
+    pertcentAAGreaterThanThreshold <- data.frame(mutate(pertcentAAGreaterThanThreshold,Percentcov=n/Length*100))
+    pertcentAAGreaterThanThreshold <- left_join(data.frame(group_name = names(read.fasta(proteinFile))),pertcentAAGreaterThanThreshold)
+    pertcentAAGreaterThanThreshold$Percentcov[is.na(pertcentAAGreaterThanThreshold$Percentcov)] = 0
+    return(pertcentAAGreaterThanThreshold)
+  
+}
+
+
+load("../app/LangCelegansBuscoGranges.Rdata")
+LangeCelegans <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+
+load("../app/LangBuscoGranges.Rdata")
+LangBusco <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
+
+load("../app/SchwarzCelegansBuscoGranges.Rdata")
+SchwarzeCelegans <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+
+load("../app/SchwarzBuscoGranges.Rdata")
+SchwarzBusco <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
+
+
+ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+ggtitle("Laing Allinged to C.elegans Busco Proteins")
+ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+ggtitle("Laing Allinged to Busco Proteins")
+
+mean(LangeCelegans$Percentcov)
+mean(LangBusco$Percentcov)
+
+
+ggplot(LangeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Laing Allinged to C.elegans Busco Proteins")
+ggplot(LangBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Laing Allinged to Busco Proteins")
+
+
+
+
+ggplot(SchwarzeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80)+ggtitle("Schwarz Allinged to C.elegans Busco Proteins")
+ggplot(SchwarzBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80)+ggtitle("Schwarz Allinged to Busco Proteins")
+
+
+mean(SchwarzeCelegans$Percentcov)
+mean(SchwarzBusco$Percentcov)
+
+
+ggplot(SchwarzeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Schwarz Allinged to C.elegans Busco Proteins")
+ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Schwarz Allinged to Busco Proteins")
+
+
+
+
+```

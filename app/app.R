@@ -1,5 +1,12 @@
-#install.packages("shinyBS")
-#install.packages("shinyjS")
+# install.packages("tidyverse")
+# install.packages("shiny")
+# install.packages("data.table")
+# install.packages("seqinr")
+# source("https://bioconductor.org/biocLite.R")
+# biocLite("ggbio")
+# install.packages("shinyBS")
+# install.packages("shinyjs")
+# install.packages("plotly")
 #install.packages("ggiraph")
 library(shiny)
 library(data.table)
@@ -15,9 +22,14 @@ library(shinyjs)
 
 
 LangDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
-SchwarzDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
-proteinFile <-  "../Similarity Analysis/BuscoCelegans.fasta"
+SchwarzDiamondFiles <- c(paste0("../Similarity Analysis/SchwarzDiamondResults/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
+LangDiamondFilesBUSCOHMM <- c(paste0("../Similarity Analysis/LangDiamondResultsBuscoHMM/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
+SchwarzDiamondFilesBUSCOHMM <- c(paste0("../Similarity Analysis/SchwarzDiamondResultsBuscoHMM/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
 
+
+
+proteinFileCelegans <-  "../Similarity Analysis/BuscoCelegans.fasta"
+proteinFileBusco <-  "../Similarity Analysis/BuscoProteinSet.fa"
 
 Doyle <-  unique(read.delim(file = "../Similarity Analysis/DoyleGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
 Lang <- unique(read.delim(file = "../Similarity Analysis/LangGenome.tsv",comment.char = "#",header = FALSE,stringsAsFactors = FALSE)[,c(1,2)])
@@ -30,9 +42,22 @@ Lang$Status[Lang$Status=="Complete"] = "Singleton"
 Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
 
 
+
 diamondFiles <- LangDiamondFiles
 myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Singleton"])
 #myProteins <- Lang$BuscoId[Lang$Status == "Singleton"]
+proteinFile <- proteinFileCelegans
+
+
+load("LangCelegansBuscoGranges.Rdata")
+
+
+"LangCelegansBuscoGranges.Rdata"
+"SchwarzCelegansBuscoGranges.Rdata"
+"SchwarzBuscoGranges.Rdata"
+"LangBuscoGranges.Rdata"
+
+
 
 readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
   
@@ -54,7 +79,7 @@ readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
   
   #Correcting sequence lengths 
   if(!is.null(proteinFile)){
-    protein <<-  read.fasta(proteinFile)
+    protein <-  read.fasta(proteinFile)
     seqlengths(allDiamondGranges) <-  getLength(protein[       seqnames(seqinfo(allDiamondGranges))        ])
   }
   return(allDiamondGranges)
@@ -159,8 +184,7 @@ server <- function(input, output,session) {
   #Data 
   
   #diamondGRanges <- readDiamondFiles(diamondFiles = diamondFiles,proteinFile = proteinFile)
-  #save(diamondGRanges,file = "LangDiamondGranges.Rdata")
-  load("LangDiamondGranges.Rdata")
+  #save(diamondGRanges,file = "Granges.Rdata")
   splitDiamondGRanges <- split(diamondGRanges,seqnames(diamondGRanges))
   
   coverage <- as.data.frame(coverage(diamondGRanges))
@@ -185,9 +209,11 @@ server <- function(input, output,session) {
       group_by(group_name) %>%
       filter(value >= input$Coverage)%>%
       tally()
-    
+
     pertcentAAGreaterThanThreshold$Length <- as.vector(seqlengths(diamondGRanges)[pertcentAAGreaterThanThreshold$group_name])
     pertcentAAGreaterThanThreshold <- data.frame(mutate(pertcentAAGreaterThanThreshold,Percentcov=n/Length*100))
+    pertcentAAGreaterThanThreshold <- left_join(data.frame(group_name = names(read.fasta(proteinFile))),pertcentAAGreaterThanThreshold)
+    pertcentAAGreaterThanThreshold$Percentcov[is.na(pertcentAAGreaterThanThreshold$Percentcov)] = 0
     updateSelectInput(session,"Proteins",choices = pertcentAAGreaterThanThreshold$group_name)
     return(pertcentAAGreaterThanThreshold)
   })
@@ -199,6 +225,8 @@ server <- function(input, output,session) {
     plot <- plot +coord_flip()
   })
   
+
+
 
   
   output$ViolinPlot <- renderPlotly({
