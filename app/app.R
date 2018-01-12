@@ -25,7 +25,7 @@ LangDiamondFiles <- c(paste0("../Similarity Analysis/LangDiamondResults/",c("ERR
 SchwarzDiamondFiles <- c(paste0("../Similarity Analysis/SchwarzDiamondResults/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
 LangDiamondFilesBUSCOHMM <- c(paste0("../Similarity Analysis/LangDiamondResultsBuscoHMM/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
 SchwarzDiamondFilesBUSCOHMM <- c(paste0("../Similarity Analysis/SchwarzDiamondResultsBuscoHMM/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
-
+LangDiamondFilesMoreSensative <-c(paste0("../Similarity Analysis/LangDiamondResultsMoreSensative/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
 
 
 proteinFileCelegans <-  "../Similarity Analysis/BuscoCelegans.fasta"
@@ -43,15 +43,13 @@ Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
 
 
 
-diamondFiles <- LangDiamondFiles
+diamondFiles <- LangDiamondFilesMoreSensative
 myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Singleton"])
 #myProteins <- Lang$BuscoId[Lang$Status == "Singleton"]
 proteinFile <- proteinFileCelegans
 
 
-load("LangCelegansBuscoGranges.Rdata")
-
-
+#load("LangCelegansBuscoGranges.Rdata")
 "LangCelegansBuscoGranges.Rdata"
 "SchwarzCelegansBuscoGranges.Rdata"
 "SchwarzBuscoGranges.Rdata"
@@ -183,8 +181,8 @@ server <- function(input, output,session) {
   
   #Data 
   
-  #diamondGRanges <- readDiamondFiles(diamondFiles = diamondFiles,proteinFile = proteinFile)
-  #save(diamondGRanges,file = "Granges.Rdata")
+  diamondGRanges <- readDiamondFiles(diamondFiles = diamondFiles,proteinFile = proteinFile)
+  save(diamondGRanges,file = "Granges.Rdata")
   splitDiamondGRanges <- split(diamondGRanges,seqnames(diamondGRanges))
   
   coverage <- as.data.frame(coverage(diamondGRanges))

@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 What we found out was that busco uses a hmmer consensus sequence which makes it very hard for reads to align. Thus we must get the closest ancestor being C. elegans to make this work. So I am going to be taking the othrodb groups and extracting the c.elegans genes from it. Hopefully it has all 982 genes. C.elegans species number is 6239. 
 
-```{r}
+```{r,eval=FALSE,include=FALSE}
 library(seqinr)
 
 orthoDbToOrganism <- read.table("ogs.id.info",stringsAsFactors = FALSE)
@@ -42,6 +42,7 @@ library(GenomicRanges)
 library(data.table)
 library(plyr)
 library(dplyr)
+library(seqinr)
 calculateTotalCoverage <- function(coverage){
   totalCoverage <- coverage[,3]
   totalCoverage <- totalCoverage[(totalCoverage > 10 & totalCoverage<=200)]   #Limited the data so it is easier to see the main parts of it. We can also limit the data later on as well. 
@@ -73,43 +74,70 @@ PercentAAGreaterThan <- function(diamondGRanges,proteinFile){
   
 }
 
+getModeGranges <- function(diamondGRanges,proteinFile){
+  coverage <- as.data.frame(coverage(diamondGRanges))
+  totalCoverage <- calculateTotalCoverage(coverage)
+  threholdCoverage <- getmode(totalCoverage[,1])
+  return(threholdCoverage)
+}
+
 
 load("../app/LangCelegansBuscoGranges.Rdata")
 LangeCelegans <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+LangeCelegansCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
 
 load("../app/LangBuscoGranges.Rdata")
 LangBusco <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
+LangBuscoCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
 
 load("../app/SchwarzCelegansBuscoGranges.Rdata")
 SchwarzeCelegans <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+SchwarzeCelegansCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
 
 load("../app/SchwarzBuscoGranges.Rdata")
 SchwarzBusco <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
+SchwarzBuscoCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+
+load("../app/LangCelegansMoreSensativeBuscoGranges.Rdata")
+LangeCelegansMoreSensative <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
+LangeCelegansMoreSensativeCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
 
 
-ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+ggtitle("Laing Allinged to C.elegans Busco Proteins")
-ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+ggtitle("Laing Allinged to Busco Proteins")
+
+ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+labs(title = "Laing Allinged to C.elegans Busco Proteins", subtitle = paste("CoverageThreshold =",LangeCelegansCV))
+
+ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) +labs(title = "Laing Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
+
+ggplot(LangeCelegansMoreSensative,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Allinged to C.elegans Busco Proteins Using More Sensative",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
 
 mean(LangeCelegans$Percentcov)
 mean(LangBusco$Percentcov)
+mean(LangeCelegansMoreSensative$Percentcov)
 
 
-ggplot(LangeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Laing Allinged to C.elegans Busco Proteins")
-ggplot(LangBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Laing Allinged to Busco Proteins")
+ggplot(LangeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Allinged to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",LangeCelegansCV))
+
+ggplot(LangBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
+
+ggplot(LangeCelegansMoreSensative,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ labs(title = "Laing Allinged to C.elegans Busco Proteins Using More Sensative",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
 
 
 
 
-ggplot(SchwarzeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80)+ggtitle("Schwarz Allinged to C.elegans Busco Proteins")
-ggplot(SchwarzBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80)+ggtitle("Schwarz Allinged to Busco Proteins")
+
+ggplot(SchwarzeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80) + labs(title = "Schwarz Allinged to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzeCelegansCV))
+
+ggplot(SchwarzBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80) + labs(title = "Schwarz Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzBuscoCV))
+
 
 
 mean(SchwarzeCelegans$Percentcov)
 mean(SchwarzBusco$Percentcov)
 
 
-ggplot(SchwarzeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Schwarz Allinged to C.elegans Busco Proteins")
-ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ggtitle("Schwarz Allinged to Busco Proteins")
+ggplot(SchwarzeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Schwarz Allinged to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzeCelegansCV))
+
+ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Schwarz Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzBuscoCV))
 
 
 
