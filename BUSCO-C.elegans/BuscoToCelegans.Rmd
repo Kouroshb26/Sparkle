@@ -104,30 +104,30 @@ LangeCelegansMoreSensativeCV <- getModeGranges(diamondGRanges,"../Similarity Ana
 
 
 
-ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+labs(title = "Laing Allinged to C.elegans Busco Proteins", subtitle = paste("CoverageThreshold =",LangeCelegansCV))
+ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+labs(title = "Laing Aligned to C.elegans Busco Proteins", subtitle = paste("CoverageThreshold =",LangeCelegansCV))
 
-ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) +labs(title = "Laing Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
+ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) +labs(title = "Laing Aligned to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
 
-ggplot(LangeCelegansMoreSensative,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Allinged to C.elegans Busco Proteins Using More Sensative",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
+ggplot(LangeCelegansMoreSensative,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Aligned  to C.elegans Busco Proteins Using More Sensitive",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
 
 mean(LangeCelegans$Percentcov)
 mean(LangBusco$Percentcov)
 mean(LangeCelegansMoreSensative$Percentcov)
 
 
-ggplot(LangeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Allinged to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",LangeCelegansCV))
+ggplot(LangeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Aligned  to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",LangeCelegansCV))
 
-ggplot(LangBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
+ggplot(LangBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Aligned  to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
 
-ggplot(LangeCelegansMoreSensative,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ labs(title = "Laing Allinged to C.elegans Busco Proteins Using More Sensative",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
-
-
+ggplot(LangeCelegansMoreSensative,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ labs(title = "Laing Aligned  to C.elegans Busco Proteins Using More Sensitive",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
 
 
 
-ggplot(SchwarzeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80) + labs(title = "Schwarz Allinged to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzeCelegansCV))
 
-ggplot(SchwarzBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80) + labs(title = "Schwarz Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzBuscoCV))
+
+ggplot(SchwarzeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80) + labs(title = "Schwarz Aligned to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzeCelegansCV))
+
+ggplot(SchwarzBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,80) + labs(title = "Schwarz Aligned to Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzBuscoCV))
 
 
 
@@ -135,9 +135,9 @@ mean(SchwarzeCelegans$Percentcov)
 mean(SchwarzBusco$Percentcov)
 
 
-ggplot(SchwarzeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Schwarz Allinged to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzeCelegansCV))
+ggplot(SchwarzeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Schwarz Aligned to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzeCelegansCV))
 
-ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Schwarz Allinged to Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzBuscoCV))
+ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Schwarz Aligned to Busco Proteins",subtitle = paste("CoverageThreshold =",SchwarzBuscoCV))
 
 
 
