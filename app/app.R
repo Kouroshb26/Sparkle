@@ -26,7 +26,8 @@ SchwarzDiamondFiles <- c(paste0("../Similarity Analysis/SchwarzDiamondResults/",
 LangDiamondFilesBUSCOHMM <- c(paste0("../Similarity Analysis/LangDiamondResultsBuscoHMM/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
 SchwarzDiamondFilesBUSCOHMM <- c(paste0("../Similarity Analysis/SchwarzDiamondResultsBuscoHMM/",c("SRR935429.Allignment.txt","SRR935429_1.Allignment.txt","SRR935429_2.Allignment.txt")))
 LangDiamondFilesMoreSensative <-c(paste0("../Similarity Analysis/LangDiamondResultsMoreSensative/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
-
+LangMMseqs2Files <- c(paste0("../Similarity Analysis/LangMMseqs2Results/",c("ERR126028.Allignment.txt","ERR126028_1.Allignment.txt","ERR126028_2.Allignment.txt","ERR126029.Allignment.txt","ERR126029_1.Allignment.txt","ERR126029_2.Allignment.txt")))
+  
 
 proteinFileCelegans <-  "../Similarity Analysis/BuscoCelegans.fasta"
 proteinFileBusco <-  "../Similarity Analysis/BuscoProteinSet.fa"
@@ -43,7 +44,7 @@ Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
 
 
 
-diamondFiles <- LangDiamondFilesMoreSensative
+diamondFiles <- LangMMseqs2Files
 myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Singleton"])
 #myProteins <- Lang$BuscoId[Lang$Status == "Singleton"]
 proteinFile <- proteinFileCelegans

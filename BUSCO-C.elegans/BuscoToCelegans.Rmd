@@ -88,7 +88,7 @@ LangeCelegansCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCe
 
 load("../app/LangBuscoGranges.Rdata")
 LangBusco <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
-LangBuscoCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+LangBuscoCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
 
 load("../app/SchwarzCelegansBuscoGranges.Rdata")
 SchwarzeCelegans <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
@@ -96,11 +96,15 @@ SchwarzeCelegansCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/Busc
 
 load("../app/SchwarzBuscoGranges.Rdata")
 SchwarzBusco <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
-SchwarzBuscoCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+SchwarzBuscoCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
 
 load("../app/LangCelegansMoreSensativeBuscoGranges.Rdata")
-LangeCelegansMoreSensative <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoProteinSet.fa")
+LangeCelegansMoreSensative <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
 LangeCelegansMoreSensativeCV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+
+load("../app/LangCelegansMMseqs2Granges.Rdata")
+LangeCelegansMMseqs2 <- PercentAAGreaterThan(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
+LangeCelegansMMseqs2CV <- getModeGranges(diamondGRanges,"../Similarity Analysis/BuscoCelegans.fasta")
 
 
 
@@ -110,9 +114,13 @@ ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) +labs
 
 ggplot(LangeCelegansMoreSensative,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Aligned  to C.elegans Busco Proteins Using More Sensitive",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
 
+
+ggplot(LangeCelegansMMseqs2,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Aligned to C.elegans Busco Proteins Using MMseqs2",subtitle = paste("CoverageThreshold =",LangeCelegansMMseqs2CV))
+
 mean(LangeCelegans$Percentcov)
 mean(LangBusco$Percentcov)
 mean(LangeCelegansMoreSensative$Percentcov)
+mean(LangeCelegansMMseqs2$Percentcov)
 
 
 ggplot(LangeCelegans,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4) + labs(title = "Laing Aligned  to C.elegans Busco Proteins",subtitle = paste("CoverageThreshold =",LangeCelegansCV))
@@ -121,6 +129,7 @@ ggplot(LangBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom
 
 ggplot(LangeCelegansMoreSensative,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ labs(title = "Laing Aligned  to C.elegans Busco Proteins Using More Sensitive",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
 
+ggplot(LangeCelegansMMseqs2,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+geom_jitter(shape=16,size=0.4)+ labs(title = "Laing Aligned to C.elegans Busco Proteins Using MMseqs2",subtitle = paste("CoverageThreshold =",LangeCelegansMMseqs2CV))
 
 
 
