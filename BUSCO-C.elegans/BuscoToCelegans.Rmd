@@ -152,3 +152,21 @@ ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+g
 
 
 ```
+
+```{r}
+
+saveFiles <- function(x){
+  lapply(split(x,x$file),function(x){
+    print(paste0(seqnames(x)[1],".",x$file[1],".txt"))
+    write.table(sapply(strsplit(x$Query,".",TRUE), "[[", 2),paste0("readAllignments/",seqnames(x)[1],".",x$file[1],".txt"),quote=FALSE,row.names = FALSE,col.names = FALSE)
+  })
+  return("Passed")
+}
+
+
+load("../app/LangCelegansMMseqs2Granges.Rdata")
+splitDiamond <- split(diamondGRanges,seqnames(diamondGRanges))
+lapply(splitDiamond,saveFiles)
+
+  
+```

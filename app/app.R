@@ -73,6 +73,7 @@ readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
     diamondGRanges <- makeGRangesFromDataFrame(diamond,seqnames.field= "Reference",start.field = "s.start",end.field ="s.end")
     mcols(diamondGRanges)$Score <- diamond$DiamondScore
     mcols(diamondGRanges)$Query <- diamond$Query
+    mcols(diamondGRanges)$file <- strsplit(basename(diamondFile),".",TRUE)[[1]][1]
     allDiamondGranges <-  c(allDiamondGranges,diamondGRanges)
   }
   
