@@ -158,7 +158,8 @@ ggplot(SchwarzBusco,aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)+coord_flip()+g
 saveFiles <- function(x){
   lapply(split(x,x$file),function(x){
     print(paste0(seqnames(x)[1],".",x$file[1],".txt"))
-    write.table(sapply(strsplit(x$Query,".",TRUE), "[[", 2),paste0("readAllignments/",seqnames(x)[1],".",x$file[1],".txt"),quote=FALSE,row.names = FALSE,col.names = FALSE)
+    write.table(x$Query,paste0("readAllignmentsMMSEQ2/",seqnames(x)[1],".",x$file[1],".txt"),quote=FALSE,row.names = FALSE,col.names = FALSE)
+    #,"",sapply(strsplit(x$Query,".",TRUE), "[[", 2),"length=100"
   })
   return("Passed")
 }
