@@ -45,16 +45,17 @@ Schwarz$Status[Schwarz$Status=="Complete"] = "Singleton"
 
 
 diamondFiles <- LangMMseqs2Files
-myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Singleton"])
+myProteins <- intersect(Doyle$BuscoId[Doyle$Status == "Singleton"],Lang$BuscoId[Lang$Status == "Missing"])
 #myProteins <- Lang$BuscoId[Lang$Status == "Singleton"]
 proteinFile <- proteinFileCelegans
 
 
-#load("LangCelegansBuscoGranges.Rdata")
+load("LangCelegansMMseqs2Granges.Rdata")
 "LangCelegansBuscoGranges.Rdata"
 "SchwarzCelegansBuscoGranges.Rdata"
 "SchwarzBuscoGranges.Rdata"
 "LangBuscoGranges.Rdata"
+"LangCelegansMMseqs2Granges.Rdata"
 
 
 
@@ -183,8 +184,8 @@ server <- function(input, output,session) {
   
   #Data 
   
-  diamondGRanges <- readDiamondFiles(diamondFiles = diamondFiles,proteinFile = proteinFile)
-  save(diamondGRanges,file = "Granges.Rdata")
+  #diamondGRanges <- readDiamondFiles(diamondFiles = diamondFiles,proteinFile = proteinFile)
+  #save(diamondGRanges,file = "Granges.Rdata")
   splitDiamondGRanges <- split(diamondGRanges,seqnames(diamondGRanges))
   
   coverage <- as.data.frame(coverage(diamondGRanges))
