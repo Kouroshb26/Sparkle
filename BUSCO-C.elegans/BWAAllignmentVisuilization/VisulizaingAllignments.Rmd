@@ -1,0 +1,44 @@
+---
+title: "VisualizingAlignments"
+output: html_document
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggbio)
+library(GenomicRanges)
+```
+
+## Visualizing Allignments onto the genome
+
+
+
+
+``` {r Doyle}
+Doyle <- read.table("EOG091H02QUDoyle.bed",header = FALSE)
+colnames(Doyle) <- c('chr','start','end','id','score','strand')
+
+gRanges <- with(Doyle,GRanges(chr,IRanges(start+1,end),strand,score,id=id))
+
+
+readplot <- ggplot(gRanges)+stat_stepping(geom="segment")
+readplot
+ggsave("Doyle.png")
+
+```
+
+``` {r Laing}
+
+Laing <- read.table("EOG091H02QULaing.bed",header = FALSE)
+colnames(Laing) <- c('chr','start','end','id','score','strand')
+
+gRanges <- with(Laing,GRanges(chr,IRanges(start+1,end),strand,score,id=id))
+
+
+readplot <- ggplot(gRanges)+stat_stepping(geom="segment")
+readplot
+ggsave("Laing.png")
+
+```

@@ -108,14 +108,18 @@ LangeCelegansMMseqs2CV <- getModeGranges(diamondGRanges,"../Similarity Analysis/
 
 
 
-ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+labs(title = "Laing Aligned to C.elegans Busco Proteins", subtitle = paste("CoverageThreshold =",LangeCelegansCV))
+ggplot(LangeCelegans,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110)+labs(title = "Laing sequencing reads aligned to C.elegans BUSCO proteins using DIAMOND", subtitle = paste("CoverageThreshold =",LangeCelegansCV), x = paste("Percent of amino acids with minimum depth >= ",LangeCelegansCV), y = "Count")
+ggsave("Lang1.png",device="png", width = 9, height = 7)
 
-ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) +labs(title = "Laing Aligned to Busco Proteins",subtitle = paste("CoverageThreshold =",LangBuscoCV))
+ggplot(LangBusco,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) +labs(title = "Laing sequencing reads aligned to BUSCO proteins using DIAMOND",subtitle = paste("CoverageThreshold =",LangBuscoCV), x = paste("Percent of amino acids with minimum depth >= ",LangBuscoCV), y = "Count")
+ggsave("Lang2.png",device="png", width = 9, height = 7)
 
-ggplot(LangeCelegansMoreSensative,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Aligned  to C.elegans Busco Proteins Using More Sensitive",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV))
+ggplot(LangeCelegansMoreSensative,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing sequencing reads aligned to C.elegans BUSCO proteins using DIAMOND More Sensitive",subtitle = paste("CoverageThreshold =",LangeCelegansMoreSensativeCV), x = paste("Percent of amino acids with minimum depth >= ",LangeCelegansMoreSensativeCV), y = "Count")
+ggsave("Lang3.png",device="png", width = 9, height = 7)
 
 
-ggplot(LangeCelegansMMseqs2,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing Aligned to C.elegans Busco Proteins Using MMseqs2",subtitle = paste("CoverageThreshold =",LangeCelegansMMseqs2CV))
+ggplot(LangeCelegansMMseqs2,aes(Percentcov))+geom_histogram(binwidth = 5)+ylim(0,110) + labs(title = "Laing sequencing reads aligned to C.elegans BUSCO Proteins using MMseqs2",subtitle = paste("CoverageThreshold =",LangeCelegansMMseqs2CV), x = paste("Percent of amino acids with minimum depth >= ",LangeCelegansMMseqs2CV), y = "Count")
+ggsave("Lang4.png",device="png", width = 9, height = 7)
 
 mean(LangeCelegans$Percentcov)
 mean(LangBusco$Percentcov)
