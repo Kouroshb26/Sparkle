@@ -78,7 +78,8 @@ readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
     allDiamondGranges <-  c(allDiamondGranges,diamondGRanges)
   }
   
-  #Correcting sequence lengths 
+  #Correcting sequence lengths.
+  #This is done because the allignments may not cover the whole protien. Thus we must go into the fasta files and extend the protien length to be true.
   if(!is.null(proteinFile)){
     protein <-  read.fasta(proteinFile)
     seqlengths(allDiamondGranges) <-  getLength(protein[       seqnames(seqinfo(allDiamondGranges))        ])
@@ -86,9 +87,9 @@ readDiamondFiles <- function(diamondFiles,proteinFile,bestAllignment = TRUE){
   return(allDiamondGranges)
 }
 
-getmode <- function(v) {
-  uniqv <- unique(v)
-  uniqv[which.max(tabulate(match(v, uniqv)))]
+getmode <- function(totalCoverage) {
+  uniqv <- unique(totalCoverage)
+  uniqv[which.max(tabulate(match(totalCoverage, uniqv)))]
 }
 
 calculateTotalCoverage <- function(coverage){
@@ -135,7 +136,7 @@ ui <- fluidPage(
        
        selectInput("Proteins", "Chosen Proteins", c(), multiple=TRUE, selectize=TRUE),
        sliderInput("AAThreshold","Percent amino acid above threshold",min=0,max=100,value = c(80,100)),
-       actionButton("ProtienComplete","Start Analysis"),
+       actionButton("StartAnalysis","Start Analysis"),
        actionButton("myProtein","Select My Proteins")
      ),
      
@@ -192,7 +193,7 @@ server <- function(input, output,session) {
   #Calculating Total Coverage
   totalCoverage <- calculateTotalCoverage(coverage)
   #Make coverage equal to the mode 
-  updateSliderInput(session,"Coverage",value =getmode(totalCoverage[,1]) )
+  updateSliderInput(session,"Coverage",value = getmode(totalCoverage[,1]) )
 
 
   output$ThreshHoldCoverageHist <- renderPlot({
@@ -204,7 +205,8 @@ server <- function(input, output,session) {
   
   
   
-  #Calculaing % of aa above threshold coverage 
+  #Calculaing % of aa above threshold coverage
+  #Very intensive to do , thus it is done reactively
   pertcentAAGreaterThanThreshold <- reactive({
     pertcentAAGreaterThanThreshold <-   coverage[,c(2,3)] %>%
       group_by(group_name) %>%
@@ -220,23 +222,15 @@ server <- function(input, output,session) {
   })
   
 
-  
-  ViolinPlot <- reactive({
-    plot <- ggplot(pertcentAAGreaterThanThreshold(),aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)
-    plot <- plot +coord_flip()
-  })
-  
-
-
-
-  
+  #Violin Plot
   output$ViolinPlot <- renderPlotly({
     if(input$Coverage == 0){
       return(NULL)
     }
     set.seed(1)
 
-    plot <- ViolinPlot()
+    plot <- ggplot(pertcentAAGreaterThanThreshold(),aes(x=1,y=Percentcov))+geom_violin(alpha=0.2)
+    plot <- plot +coord_flip()
     
     plot <- plot +geom_jitter(shape=16,size=0.4,aes(color=group_name%in%input$Proteins,alpha=ifelse(group_name%in%input$Proteins,100,20),key=group_name,text=group_name))+ scale_colour_manual(values = c("FALSE"="black","TRUE"="blue"))
     plot <- plot +geom_hline(yintercept = isolate(input$AAThreshold),color="black")+ylab(paste0("% amino acid that have coverage above ",input$Coverage))
@@ -244,7 +238,7 @@ server <- function(input, output,session) {
 
   })
   
-  
+  #Change % of amino acid threshold
   observeEvent(input$AAThreshold+input$Coverage,{
     if(input$Coverage ==0){
       return()
@@ -253,19 +247,13 @@ server <- function(input, output,session) {
   })
   
   #Select / Click event on the Violoin plot 
-  # observeEvent(event_data("plotly_selected",source="ViolinPlot"),{
-  #   d <- event_data("plotly_selected",source="ViolinPlot")
-  #   if (!is.null(d)){
-  #     updateSelectInput(session,"Proteins",selected = c(input$Proteins,d$key))
-  #   }
-  # })
-  
   observeEvent(event_data("plotly_click",source="ViolinPlot"),{
     d <- event_data("plotly_click",source="ViolinPlot")
     if (!is.null(d)){
       updateSelectInput(session,"Proteins",selected = c(input$Proteins,d$key))
     }
   })
+  
   
   # observeEvent(input$ProtienComplete,{
   #   output$ProteinTable <- renderDataTable({
@@ -287,14 +275,15 @@ server <- function(input, output,session) {
     proteinList <- isolate(proteinList[proteinList[,1]%in%input$Proteins,c(1,4)])
     colnames(proteinList) <- c("Protein","Percent AA above threshold")
     proteinList <- proteinList[order(-proteinList[,2]),]
-    proteinList$Status <- rep(NA,length(proteinList[,1]))
+    proteinList$Status <- rep("",length(proteinList[,1]))
     return(proteinList)
   }
     
   
   ananlysisProtienList <- reactiveVal()
   
-  observeEvent(input$ProtienComplete,{
+  #Start Analysis
+  observeEvent(input$StartAnalysis,{
     
     ananlysisProtienList(proteinList())
 
@@ -419,7 +408,10 @@ server <- function(input, output,session) {
 
   
   output$DownloadResults <- downloadHandler(
-    filename="Results.csv",content=function(file) {write.csv(ananlysisProtienList()[ananlysisProtienList()$Status == "Keep",c(1,2)],file)}
+    filename="Results.csv",content=function(file) {
+      selectedProteins <- ananlysisProtienList()[ananlysisProtienList()$Status == "Keep",c(1,2)]
+      selectedProteins$reads <- sapply(selectedProteins$Protein,function(protein){paste(splitDiamondGRanges[[protein]]$Query,collapse = ";")})
+      write.csv(selectedProteins,file,row.names = FALSE)}
   )
   
   #Reset Threshold Coverage
